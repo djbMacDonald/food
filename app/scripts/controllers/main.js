@@ -32,6 +32,18 @@ angular.module('foodApp').controller('MainCtrl', function ($http) {
 
     vm.map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
 
+    $.getJSON("data/citylimit.topojson", function(data){
+        var geoJsonObject = topojson.feature(data, data.objects.collection)
+        vm.map.data.addGeoJson(geoJsonObject);
+      });
+
+    vm.map.data.setStyle({
+      fillColor: 'red',
+      fillOpacity: 0.06,
+      strokeColor: 'red',
+      strokeWeight: 1
+    });
+
   };
 
   vm.drawFood = function(data) {
@@ -87,3 +99,5 @@ angular.module('foodApp').controller('MainCtrl', function ($http) {
   google.maps.event.addDomListener(window, 'load', vm.initialize);
 
 });
+
+
