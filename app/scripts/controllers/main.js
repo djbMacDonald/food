@@ -7,27 +7,22 @@
  * # MainCtrl
  * Controller of the foodApp
  */
-angular.module('foodApp').controller('MainCtrl', function ($http) {
+angular.module('foodApp').controller('MainCtrl', MainCtrl);
+
+MainCtrl.$inject = ['requestFactory', '$q'];
+
+
+function MainCtrl (requestFactory, $q) {
   var vm = this;
 
-  vm.drinks = [];
+  vm.foodPlaces = requestFactory.foodPlaces;
+  vm.drinkPlaces = requestFactory.drinkPlaces;
 
   vm.year = 2006;
 
   vm.getData = function() {
-    $http.get('https://data.cityofboston.gov/resource/hda6-fnsh.json').success(function(data){
-      vm.drinkLocations(data);
-      vm.getFood();
-    });
+    $q.all([requestFactory.getFoodPlaces(), requestFactory.getDrinkPlaces()]).then(vm.drawFood);
   };
-
-  vm.getFood = function() {
-    $http.get('https://data.cityofboston.gov/resource/gb6y-34cq.json').success(function(data){
-        vm.drawFood(data);
-    });
-  };
-
-
 
   vm.initialize = function() {
 
@@ -51,21 +46,23 @@ angular.module('foodApp').controller('MainCtrl', function ($http) {
 
   };
 
-  vm.drawFood = function(data) {
+  vm.drawFood = function() {
+    console.log('draw');
+    var infoWindow, circle;
 
-    var infoWindow;
-
-    for (var i = 0; i < data.length - 1; i++) {
+    for (var i = 0; i < vm.foodPlaces.length - 1; i++) {
       var color = (function() {
-        for (var j = 0; j < vm.drinks.length - 1; j++) {
-          if (vm.drinks[j][0] === Number(data[i].location.latitude) && vm.drinks[j][1] === Number(data[i].location.longitude)) {
+        for (var j = 0; j < vm.drinkPlaces.length - 1; j++) {
+          if (vm.drinkPlaces[j][0] === Number(vm.foodPlaces[i].location.latitude) && vm.drinkPlaces[j][1] === Number(vm.foodPlaces[i].location.longitude)) {
             return '#0000FF';
           }
         }
         return '#FF0000';
       })();
 
-      var circle = new google.maps.Circle({
+      // circle.setMap(null);
+
+      circle = new google.maps.Circle({
         strokeColor: color,
         strokeOpacity: 0.8,
         strokeWeight: 2,
@@ -73,11 +70,11 @@ angular.module('foodApp').controller('MainCtrl', function ($http) {
         fillOpacity: 0.6,
         clickable: true,
         map: vm.map,
-        name: data[i].businessname,
-        address: data[i].address,
-        city: data[i].city,
-        phone: vm.formatPhone(data[i].dayphn),
-        center: { lat: Number(data[i].location.latitude), lng: Number(data[i].location.longitude) },
+        name: vm.foodPlaces[i].businessname,
+        address: vm.foodPlaces[i].address,
+        city: vm.foodPlaces[i].city,
+        phone: vm.formatPhone(vm.foodPlaces[i].dayphn),
+        center: { lat: Number(vm.foodPlaces[i].location.latitude), lng: Number(vm.foodPlaces[i].location.longitude) },
         radius: 10
       });
 
@@ -94,31 +91,6 @@ angular.module('foodApp').controller('MainCtrl', function ($http) {
     }
   };
 
-  vm.drinkLocations = function(data) {
-    vm.drinks = [];
-    for (var i = 0; i < data.length - 1; i++) {
-      if (data[i].location !== 'NULL') {
-        vm.drinks.push([vm.getLat(data[i].location), vm.getLong(data[i].location)]);
-      }
-    }
-  };
-
-  vm.getLat = function(location) {
-    var reg = /\(.*,/;
-    location = reg.exec(location)[0];
-    location = location.slice(1);
-    location = location.slice(0, -1);
-    return Number(location);
-  };
-
-  vm.getLong = function(location) {
-    var reg = /\s.*\)/;
-    location = reg.exec(location)[0];
-    location = location.slice(1);
-    location = location.slice(0, -1);
-    return Number(location);
-  };
-
   vm.formatPhone = function(string) {
     string = string.slice(2);
     return string.substring(0,3) + '-' + string.substring(3,6) + '-' + string.substring(6,string.length);
@@ -129,7 +101,6 @@ angular.module('foodApp').controller('MainCtrl', function ($http) {
   };
 
   // google.maps.event.addDomListener(window, 'load', vm.initialize);
-
-});
+}
 
 
