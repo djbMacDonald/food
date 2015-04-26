@@ -12,6 +12,8 @@ angular.module('foodApp').controller('MainCtrl', function ($http) {
 
   vm.drinks = [];
 
+  vm.year = 2006;
+
   vm.getData = function() {
     $http.get('https://data.cityofboston.gov/resource/hda6-fnsh.json').success(function(data){
       vm.drinkLocations(data);
@@ -120,6 +122,10 @@ angular.module('foodApp').controller('MainCtrl', function ($http) {
   vm.formatPhone = function(string) {
     string = string.slice(2);
     return string.substring(0,3) + '-' + string.substring(3,6) + '-' + string.substring(6,string.length);
+  };
+
+  vm.updateSlider = function() {
+    $('#sliderLabel').val(vm.year);
   };
 
   // google.maps.event.addDomListener(window, 'load', vm.initialize);
