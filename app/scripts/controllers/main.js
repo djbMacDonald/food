@@ -17,6 +17,7 @@ function MainCtrl (requestFactory, $q) {
   vm.foodPlaces = requestFactory.foodPlaces;
   vm.drinkPlaces = requestFactory.drinkPlaces;
   vm.year = 2006;
+  vm.circles = [];
 
   vm.getData = function() {
     $q.all([requestFactory.getFoodPlaces(), requestFactory.getDrinkPlaces()]).then(vm.drawFood);
@@ -24,9 +25,7 @@ function MainCtrl (requestFactory, $q) {
 
   vm.updateSlider = function() {
     $('#sliderLabel').val(vm.year);
-
-  var arr = vm.foodPlaces.filter(vm.pastDate);
-    console.log(arr.length);
+    vm.drawFood();
   };
 
   vm.pastDate = function(store) {
@@ -61,19 +60,24 @@ function MainCtrl (requestFactory, $q) {
   };
 
   vm.drawFood = function() {
-    var infoWindow, circle;
+    var infoWindow;
+      for (var i = 0; i < vm.circles.length; i++) {
+        vm.circles[i].setMap(null);
+      }
 
-    for (var i = 0; i < vm.foodPlaces.length - 1; i++) {
+    var filteredFoodPlaces = vm.foodPlaces.filter(vm.pastDate);
+
+    for (var i = 0; i < filteredFoodPlaces.length - 1; i++) {
       var color = (function() {
         for (var j = 0; j < vm.drinkPlaces.length - 1; j++) {
-          if (vm.drinkPlaces[j][0] === Number(vm.foodPlaces[i].location.latitude) && vm.drinkPlaces[j][1] === Number(vm.foodPlaces[i].location.longitude)) {
+          if (vm.drinkPlaces[j][0] === Number(filteredFoodPlaces[i].location.latitude) && vm.drinkPlaces[j][1] === Number(filteredFoodPlaces[i].location.longitude)) {
             return '#0000FF';
           }
         }
         return '#FF0000';
       })();
 
-      circle = new google.maps.Circle({
+      var circle = new google.maps.Circle({
         strokeColor: color,
         strokeOpacity: 0.8,
         strokeWeight: 2,
@@ -81,11 +85,11 @@ function MainCtrl (requestFactory, $q) {
         fillOpacity: 0.6,
         clickable: true,
         map: vm.map,
-        name: vm.foodPlaces[i].businessname,
-        address: vm.foodPlaces[i].address,
-        city: vm.foodPlaces[i].city,
-        phone: vm.formatPhone(vm.foodPlaces[i].dayphn),
-        center: { lat: Number(vm.foodPlaces[i].location.latitude), lng: Number(vm.foodPlaces[i].location.longitude) },
+        name: filteredFoodPlaces[i].businessname,
+        address: filteredFoodPlaces[i].address,
+        city: filteredFoodPlaces[i].city,
+        phone: vm.formatPhone(filteredFoodPlaces[i].dayphn),
+        center: { lat: Number(filteredFoodPlaces[i].location.latitude), lng: Number(filteredFoodPlaces[i].location.longitude) },
         radius: 10
       });
 
@@ -99,6 +103,8 @@ function MainCtrl (requestFactory, $q) {
         infoWindow.setPosition(ev.latLng);
         infoWindow.open(vm.map);
       });
+
+      vm.circles.push(circle);
     }
   };
 
