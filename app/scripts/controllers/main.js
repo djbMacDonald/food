@@ -10,19 +10,22 @@
 angular.module('foodApp').controller('MainCtrl', function ($http) {
   var vm = this;
 
-  vm.places = ['here', 'there', 'everywhere'];
+  vm.drinks = [];
+
+  vm.getData = function() {
+    $http.get('https://data.cityofboston.gov/resource/hda6-fnsh.json').success(function(data){
+      vm.drinkLocations(data);
+      vm.getFood();
+    });
+  };
 
   vm.getFood = function() {
     $http.get('https://data.cityofboston.gov/resource/gb6y-34cq.json').success(function(data){
-        vm.drawFood(data, '#FF0000');
+        vm.drawFood(data);
     });
   };
 
-  vm.getDrink = function() {
-    $http.get('https://data.cityofboston.gov/resource/hda6-fnsh.json').success(function(data){
-        vm.drawDrink(data, '#0000FF');
-    });
-  };
+
 
   vm.initialize = function() {
 
@@ -47,56 +50,79 @@ angular.module('foodApp').controller('MainCtrl', function ($http) {
   };
 
   vm.drawFood = function(data) {
+
+    var infoWindow;
+
     for (var i = 0; i < data.length - 1; i++) {
+      var color = (function() {
+        for (var j = 0; j < vm.drinks.length - 1; j++) {
+          if (vm.drinks[j][0] === Number(data[i].location.latitude) && vm.drinks[j][1] === Number(data[i].location.longitude)) {
+            return '#0000FF';
+          }
+        }
+        return '#FF0000';
+      })();
+
       var circle = new google.maps.Circle({
-        strokeColor: '#FF0000',
+        strokeColor: color,
         strokeOpacity: 0.8,
         strokeWeight: 2,
-        fillColor: '#FF0000',
+        fillColor: color,
         fillOpacity: 0.6,
+        clickable: true,
         map: vm.map,
+        name: data[i].businessname,
+        address: data[i].address,
+        city: data[i].city,
+        phone: vm.formatPhone(data[i].dayphn),
         center: { lat: Number(data[i].location.latitude), lng: Number(data[i].location.longitude) },
         radius: 10
+      });
+
+      google.maps.event.addListener(circle, 'click', function(ev){
+        if (infoWindow) {
+          infoWindow.close();
+        }
+        infoWindow = new google.maps.InfoWindow({
+          content: '<div class="info"><h2>' + this.name + '</h2><h3>' + this.address + ', ' + this.city + '</h3><h4>Phone: ' + this.phone + '</h4></div>'
+        });
+        infoWindow.setPosition(ev.latLng);
+        infoWindow.open(vm.map);
       });
     }
   };
 
-  vm.drawDrink = function(data) {
+  vm.drinkLocations = function(data) {
+    vm.drinks = [];
     for (var i = 0; i < data.length - 1; i++) {
       if (data[i].location !== 'NULL') {
-        var foundLat = vm.getLat(data[i].location);
-        var foundLong = vm.getLong(data[i].location);
-        var circle = new google.maps.Circle({
-          strokeColor: '#0000FF',
-          strokeOpacity: 0.8,
-          strokeWeight: 2,
-          fillColor: '#0000FF',
-          fillOpacity: 0.6,
-          map: vm.map,
-          center: { lat: foundLat, lng: foundLong },
-          radius: 10
-        });
+        vm.drinks.push([vm.getLat(data[i].location), vm.getLong(data[i].location)]);
       }
     }
   };
 
-  vm.getLat = function(string) {
+  vm.getLat = function(location) {
     var reg = /\(.*,/;
-    var lat = reg.exec(string)[0];
-    lat = lat.slice(1);
-    lat = lat.slice(0, -1);
-    return Number(lat);
+    location = reg.exec(location)[0];
+    location = location.slice(1);
+    location = location.slice(0, -1);
+    return Number(location);
   };
 
-  vm.getLong = function(string) {
+  vm.getLong = function(location) {
     var reg = /\s.*\)/;
-    var lat = reg.exec(string)[0];
-    lat = lat.slice(1);
-    lat = lat.slice(0, -1);
-    return Number(lat);
+    location = reg.exec(location)[0];
+    location = location.slice(1);
+    location = location.slice(0, -1);
+    return Number(location);
   };
 
-  google.maps.event.addDomListener(window, 'load', vm.initialize);
+  vm.formatPhone = function(string) {
+    string = string.slice(2);
+    return string.substring(0,3) + '-' + string.substring(3,6) + '-' + string.substring(6,string.length);
+  };
+
+  // google.maps.event.addDomListener(window, 'load', vm.initialize);
 
 });
 
