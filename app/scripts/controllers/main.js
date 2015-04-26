@@ -14,14 +14,28 @@ MainCtrl.$inject = ['requestFactory', '$q'];
 
 function MainCtrl (requestFactory, $q) {
   var vm = this;
-
   vm.foodPlaces = requestFactory.foodPlaces;
   vm.drinkPlaces = requestFactory.drinkPlaces;
-
   vm.year = 2006;
 
   vm.getData = function() {
     $q.all([requestFactory.getFoodPlaces(), requestFactory.getDrinkPlaces()]).then(vm.drawFood);
+  };
+
+  vm.updateSlider = function() {
+    $('#sliderLabel').val(vm.year);
+
+  var arr = vm.foodPlaces.filter(vm.pastDate);
+    console.log(arr.length);
+  };
+
+  vm.pastDate = function(store) {
+    return Number(store.licenseadddttm.substring(0,4)) >= $('#yearSlider').val();
+  };
+
+  vm.formatPhone = function(string) {
+    string = string.slice(2);
+    return string.substring(0,3) + '-' + string.substring(3,6) + '-' + string.substring(6,string.length);
   };
 
   vm.initialize = function() {
@@ -47,7 +61,6 @@ function MainCtrl (requestFactory, $q) {
   };
 
   vm.drawFood = function() {
-    console.log('draw');
     var infoWindow, circle;
 
     for (var i = 0; i < vm.foodPlaces.length - 1; i++) {
@@ -59,8 +72,6 @@ function MainCtrl (requestFactory, $q) {
         }
         return '#FF0000';
       })();
-
-      // circle.setMap(null);
 
       circle = new google.maps.Circle({
         strokeColor: color,
@@ -91,16 +102,8 @@ function MainCtrl (requestFactory, $q) {
     }
   };
 
-  vm.formatPhone = function(string) {
-    string = string.slice(2);
-    return string.substring(0,3) + '-' + string.substring(3,6) + '-' + string.substring(6,string.length);
-  };
-
-  vm.updateSlider = function() {
-    $('#sliderLabel').val(vm.year);
-  };
-
-  // google.maps.event.addDomListener(window, 'load', vm.initialize);
+  vm.initialize();
+  vm.getData();
 }
 
 
