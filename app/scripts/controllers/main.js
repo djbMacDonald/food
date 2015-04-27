@@ -9,10 +9,10 @@
  */
 angular.module('foodApp').controller('MainCtrl', MainCtrl);
 
-MainCtrl.$inject = ['requestFactory', '$q'];
+MainCtrl.$inject = ['requestFactory', '$q', '$timeout'];
 
 
-function MainCtrl (requestFactory, $q) {
+function MainCtrl (requestFactory, $q, $timeout) {
   var vm = this;
   vm.foodPlaces = requestFactory.foodPlaces;
   vm.drinkPlaces = requestFactory.drinkPlaces;
@@ -24,12 +24,28 @@ function MainCtrl (requestFactory, $q) {
   };
 
   vm.updateSlider = function() {
+    if ($('#sliderLabel').val() > vm.year) {
+      $timeout(vm.addPoints);
+    } else {
+      $timeout(vm.removePoints);
+    }
     $('#sliderLabel').val(vm.year);
-    vm.drawFood();
   };
 
-  vm.pastDate = function(store) {
-    return Number(store.licenseadddttm.substring(0,4)) >= $('#yearSlider').val();
+  vm.addPoints = function() {
+    for (var i = 0; i < vm.circles.length; i++) {
+      if (vm.circles[i].year === Number(vm.year)) {
+        vm.circles[i].setMap(vm.map);
+      }
+    }
+  };
+
+  vm.removePoints = function() {
+    for (var i = 0; i < vm.circles.length; i++) {
+      if (vm.circles[i].year === Number(vm.year) - 1) {
+        vm.circles[i].setMap(null);
+      }
+    }
   };
 
   vm.formatPhone = function(string) {
@@ -40,7 +56,7 @@ function MainCtrl (requestFactory, $q) {
   vm.initialize = function() {
 
     var mapOptions = {
-      center: { lat: 42.3601, lng: -71.0589 }, zoom: 14
+      center: { lat: 42.3601, lng: -71.0589 }, zoom: 15
     };
 
     vm.map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
@@ -60,22 +76,18 @@ function MainCtrl (requestFactory, $q) {
   };
 
   vm.drawFood = function() {
-    var infoWindow;
-      for (var i = 0; i < vm.circles.length; i++) {
-        vm.circles[i].setMap(null);
-      }
 
-    var filteredFoodPlaces = vm.foodPlaces.filter(vm.pastDate);
-
-    for (var i = 0; i < filteredFoodPlaces.length - 1; i++) {
+    for (var i = 0; i < vm.foodPlaces.length - 1; i++) {
       var color = (function() {
         for (var j = 0; j < vm.drinkPlaces.length - 1; j++) {
-          if (vm.drinkPlaces[j][0] === Number(filteredFoodPlaces[i].location.latitude) && vm.drinkPlaces[j][1] === Number(filteredFoodPlaces[i].location.longitude)) {
+          if (vm.drinkPlaces[j][0] === Number(vm.foodPlaces[i].location.latitude) && vm.drinkPlaces[j][1] === Number(vm.foodPlaces[i].location.longitude)) {
             return '#0000FF';
           }
         }
         return '#FF0000';
       })();
+
+      var placeYear = Number(vm.foodPlaces[i].licenseadddttm.substring(0,4));
 
       var circle = new google.maps.Circle({
         strokeColor: color,
@@ -85,11 +97,12 @@ function MainCtrl (requestFactory, $q) {
         fillOpacity: 0.6,
         clickable: true,
         map: vm.map,
-        name: filteredFoodPlaces[i].businessname,
-        address: filteredFoodPlaces[i].address,
-        city: filteredFoodPlaces[i].city,
-        phone: vm.formatPhone(filteredFoodPlaces[i].dayphn),
-        center: { lat: Number(filteredFoodPlaces[i].location.latitude), lng: Number(filteredFoodPlaces[i].location.longitude) },
+        name: vm.foodPlaces[i].businessname,
+        address: vm.foodPlaces[i].address,
+        city: vm.foodPlaces[i].city,
+        phone: vm.formatPhone(vm.foodPlaces[i].dayphn),
+        year: placeYear,
+        center: { lat: Number(vm.foodPlaces[i].location.latitude), lng: Number(vm.foodPlaces[i].location.longitude) },
         radius: 10
       });
 
@@ -107,6 +120,27 @@ function MainCtrl (requestFactory, $q) {
       vm.circles.push(circle);
     }
   };
+
+  vm.setHeatmap = function() {
+
+    var heatArray = [];
+
+    for (var i = 0; i < vm.circles.length; i++) {
+      vm.circles[i].setMap(null);
+    }
+
+    for (var i = 0; i < vm.foodPlaces.length; i++) {
+      heatArray.push(new google.maps.LatLng(Number(vm.foodPlaces[i].location.latitude), Number(vm.foodPlaces[i].location.longitude)));
+    };
+
+    heatArray = new google.maps.MVCArray(heatArray);
+
+    var heatmap = new google.maps.visualization.HeatmapLayer({data: heatArray});
+
+    heatmap.setMap(vm.map);
+    heatmap.set('radius', 50);
+    heatmap.set('maxIntensity', 10);
+  }
 
   vm.initialize();
   vm.getData();
