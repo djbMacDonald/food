@@ -29,6 +29,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
     } else {
       $timeout(vm.removePoints);
     }
+    $timeout(vm.setHeatmap);
     $('#sliderLabel').val(vm.year);
   };
 
@@ -77,6 +78,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
 
   vm.drawFood = function() {
 
+    var infoWindow;
     for (var i = 0; i < vm.foodPlaces.length - 1; i++) {
       var color = (function() {
         for (var j = 0; j < vm.drinkPlaces.length - 1; j++) {
@@ -129,17 +131,25 @@ function MainCtrl (requestFactory, $q, $timeout) {
       vm.circles[i].setMap(null);
     }
 
+    if (vm.heatmap) {
+      vm.heatmap.setMap(null);
+    }
+
     for (var i = 0; i < vm.foodPlaces.length; i++) {
-      heatArray.push(new google.maps.LatLng(Number(vm.foodPlaces[i].location.latitude), Number(vm.foodPlaces[i].location.longitude)));
-    };
+      var placeYear = Number(vm.foodPlaces[i].licenseadddttm.substring(0,4));
+      if (placeYear >= Number(vm.year)) {
+        console.log('hi');
+        heatArray.push(new google.maps.LatLng(Number(vm.foodPlaces[i].location.latitude), Number(vm.foodPlaces[i].location.longitude)));
+      }
+    }
 
-    heatArray = new google.maps.MVCArray(heatArray);
+    var pointArray = new google.maps.MVCArray(heatArray);
 
-    var heatmap = new google.maps.visualization.HeatmapLayer({data: heatArray});
+    vm.heatmap = new google.maps.visualization.HeatmapLayer({data: pointArray});
 
-    heatmap.setMap(vm.map);
-    heatmap.set('radius', 50);
-    heatmap.set('maxIntensity', 10);
+    vm.heatmap.setMap(vm.map);
+    vm.heatmap.set('radius', 50);
+    vm.heatmap.set('maxIntensity', 10);
   }
 
   vm.initialize();
