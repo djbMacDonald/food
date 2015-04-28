@@ -10,13 +10,19 @@ describe('Controller: MainCtrl', function () {
 
   // Initialize the controller and a mock scope
   beforeEach(inject(function ($controller, $rootScope) {
+    var canvas = $('<div id=map-canvas>');
+    $(document.body).append(canvas);
     scope = $rootScope.$new();
     MainCtrl = $controller('MainCtrl', {
       $scope: scope
     });
   }));
 
-  it('should attach a list of awesomeThings to the scope', function () {
-    expect(scope.awesomeThings.length).toBe(3);
-  });
+  // it('should have a starting year', function () {
+  //   expect(MainCtrl.year).toBe(2006);
+  // });
+
+  //   it('should format phone numbers', function () {
+  //   expect(MainCtrl.formatPhone('+6175551234')).toBe('617-555-1234');
+  // });
 });

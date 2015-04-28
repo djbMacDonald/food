@@ -1,4 +1,4 @@
 <input type='range' id='yearSlider' min='2006' value='1' max='2015' step='1' ng-model='main.year' ng-change="main.updateSlider(value)">
 <output for='yearSlider' id='sliderLabel'>2006</output>
-<button ng-click='main.setHeatmap()'>heatmap</button>
+Displaying as: <button ng-click='main.toggleVisual()'>{{main.visual}}</button>
 <p>All food license in the city of Boston. If they also have a liquor license they are shown in blue. </p>

@@ -18,19 +18,38 @@ function MainCtrl (requestFactory, $q, $timeout) {
   vm.drinkPlaces = requestFactory.drinkPlaces;
   vm.year = 2006;
   vm.circles = [];
+  vm.visual = 'Circles';
 
   vm.getData = function() {
-    $q.all([requestFactory.getFoodPlaces(), requestFactory.getDrinkPlaces()]).then(vm.drawFood);
+    $q.all([requestFactory.getFoodPlaces(), requestFactory.getDrinkPlaces()])
+    .then(function() {
+      vm.createCircles();
+      vm.addPoints();
+    });
   };
 
   vm.updateSlider = function() {
-    if ($('#sliderLabel').val() > vm.year) {
-      $timeout(vm.addPoints);
+    if (vm.visual === 'Circles') {
+      if ($('#sliderLabel').val() > vm.year) {
+        $timeout(vm.removePoints);
+      } else {
+        $timeout(vm.addPoints);
+      }
     } else {
-      $timeout(vm.removePoints);
+      $timeout(vm.setHeatmap);
     }
-    $timeout(vm.setHeatmap);
     $('#sliderLabel').val(vm.year);
+  };
+
+  vm.toggleVisual = function() {
+    if (vm.visual === 'Circles') {
+      vm.visual = 'Heatmap';
+      vm.setHeatmap();
+    } else {
+      vm.visual = 'Circles';
+      vm.heatmap.setMap(null);
+      vm.showCircles();
+    }
   };
 
   vm.addPoints = function() {
@@ -54,8 +73,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
     return string.substring(0,3) + '-' + string.substring(3,6) + '-' + string.substring(6,string.length);
   };
 
-  vm.initialize = function() {
-
+  vm.makeMap = function() {
     var mapOptions = {
       center: { lat: 42.3601, lng: -71.0589 }, zoom: 15
     };
@@ -76,8 +94,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
 
   };
 
-  vm.drawFood = function() {
-
+  vm.createCircles = function() {
     var infoWindow;
     for (var i = 0; i < vm.foodPlaces.length - 1; i++) {
       var color = (function() {
@@ -98,7 +115,6 @@ function MainCtrl (requestFactory, $q, $timeout) {
         fillColor: color,
         fillOpacity: 0.6,
         clickable: true,
-        map: vm.map,
         name: vm.foodPlaces[i].businessname,
         address: vm.foodPlaces[i].address,
         city: vm.foodPlaces[i].city,
@@ -124,7 +140,6 @@ function MainCtrl (requestFactory, $q, $timeout) {
   };
 
   vm.setHeatmap = function() {
-
     var heatArray = [];
 
     for (var i = 0; i < vm.circles.length; i++) {
@@ -137,14 +152,12 @@ function MainCtrl (requestFactory, $q, $timeout) {
 
     for (var i = 0; i < vm.foodPlaces.length; i++) {
       var placeYear = Number(vm.foodPlaces[i].licenseadddttm.substring(0,4));
-      if (placeYear >= Number(vm.year)) {
-        console.log('hi');
+      if (placeYear <= Number(vm.year)) {
         heatArray.push(new google.maps.LatLng(Number(vm.foodPlaces[i].location.latitude), Number(vm.foodPlaces[i].location.longitude)));
       }
     }
 
     var pointArray = new google.maps.MVCArray(heatArray);
-
     vm.heatmap = new google.maps.visualization.HeatmapLayer({data: pointArray});
 
     vm.heatmap.setMap(vm.map);
@@ -152,7 +165,15 @@ function MainCtrl (requestFactory, $q, $timeout) {
     vm.heatmap.set('maxIntensity', 10);
   }
 
-  vm.initialize();
+  vm.showCircles = function() {
+    for (var i = 0; i < vm.circles.length; i++) {
+      if (vm.circles[i].year <= Number(vm.year)) {
+        vm.circles[i].setMap(vm.map);
+      }
+    }
+  };
+
+  vm.makeMap();
   vm.getData();
 }
 
