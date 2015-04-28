@@ -378,7 +378,8 @@ module.exports = function (grunt) {
             'data/{,*/}*.*',
             'images/{,*/}*.{webp}',
             'styles/fonts/{,*/}*.*',
-            'scripts/topojson.v1.min.js'
+            'scripts/topojson.v1.min.js',
+            'scripts/google.maps.js'
           ]
         }, {
           expand: true,
