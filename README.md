@@ -20,6 +20,7 @@ Running `grunt test` will run the unit tests with karma.
 
 I am having some difficulty getting Jasmine to work with Google maps. So some features are currently untested.
 Clicking on some circles will not display info windows. The vast majority of circles work correctly. Once testing is running with maps, hopefully the reason for the error will become apperent.
+Some establishments do not have a latitude and longitude associated with them. I had hoped to use google geocoder to look up the lat. and long. based on the given address, but google has a rate limit on geocoding. Running all the needed addresses through at the needed speed would noticably slow the loading of the app. For now I have chosing general performance over completion.
 
 ## Credits
 
