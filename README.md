@@ -2,15 +2,15 @@
 
 This app shows the locations in Boston with active food establishment licenses. The data can be shown either as a set of circles or as a heatmap. Locations that also have liquor licenses are shown as blue circles. Those without liquor licenses have red circles.
 
-With either circles or heatmap the data can be filtered by the year when the license was added to the city's database. The map will show all locations where the license was added on or after the year on the slider. So if the year '2009' is selected, the visible locations will be the ones with licenses added between 2009 and now.
+With either circles or heatmap the data can be filtered by the year when the license was added to the city's database. The map will show all locations where the license was added on or before the year on the slider. So if the year '2009' is selected, the visible locations will be the ones with licenses added between 2006 and 2009 (2006 is the first year licenses were added).
 
 Clicking on a circle will bring up an info window displaying the business name, address, and phone number.
 
 The app is deployed at eat-and-drink.herokuapp.com
 
-## Build & development
+## Set up
 
-Run `grunt` for building and `grunt serve` for preview.
+After cloning the repo, run `npm install && bower install`. To preview the app locally run `grunt serve`.
 
 ## Testing
 

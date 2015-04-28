@@ -11,15 +11,16 @@ angular.module('foodApp').controller('MainCtrl', MainCtrl);
 
 MainCtrl.$inject = ['requestFactory', '$q', '$timeout'];
 
-
 function MainCtrl (requestFactory, $q, $timeout) {
   var vm = this;
+  var infoWindow;
   vm.foodPlaces = requestFactory.foodPlaces;
   vm.drinkPlaces = requestFactory.drinkPlaces;
   vm.year = 2006;
   vm.circles = [];
   vm.visual = 'Circles';
 
+  // make requests to the food database and the drink database. once both responses come in, draw the appropriate circles
   vm.getData = function() {
     $q.all([requestFactory.getFoodPlaces(), requestFactory.getDrinkPlaces()])
     .then(function() {
@@ -28,6 +29,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
     });
   };
 
+  // update the map when the year slider is moved
   vm.updateSlider = function() {
     if (vm.visual === 'Circles') {
       if ($('#sliderLabel').val() > vm.year) {
@@ -41,6 +43,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
     $('#sliderLabel').val(vm.year);
   };
 
+  // switch between circles and heatmap
   vm.toggleVisual = function() {
     if (vm.visual === 'Circles') {
       vm.visual = 'Heatmap';
@@ -52,27 +55,33 @@ function MainCtrl (requestFactory, $q, $timeout) {
     }
   };
 
+  // points are added when the slider moves right.
   vm.addPoints = function() {
     for (var i = 0; i < vm.circles.length; i++) {
       if (vm.circles[i].year === Number(vm.year)) {
         vm.circles[i].setMap(vm.map);
+        google.maps.event.addListener(vm.circles[i], 'click', vm.showInfoWindow);
       }
     }
   };
 
+  // points are removed when the slider moves left.
   vm.removePoints = function() {
     for (var i = 0; i < vm.circles.length; i++) {
-      if (vm.circles[i].year === Number(vm.year) - 1) {
+      if (vm.circles[i].year === Number(vm.year) + 1) {
         vm.circles[i].setMap(null);
+        google.maps.event.clearListeners(vm.circles[i], 'click');
       }
     }
   };
 
+  // changes phone numbers to be more readable
   vm.formatPhone = function(string) {
     string = string.slice(2);
     return string.substring(0,3) + '-' + string.substring(3,6) + '-' + string.substring(6,string.length);
   };
 
+  // shows the Google map, then draws the city border
   vm.makeMap = function() {
     var mapOptions = {
       center: { lat: 42.3601, lng: -71.0589 }, zoom: 15
@@ -80,8 +89,8 @@ function MainCtrl (requestFactory, $q, $timeout) {
 
     vm.map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
 
-    $.getJSON("data/citylimit.topojson", function(data){
-        var geoJsonObject = topojson.feature(data, data.objects.collection)
+    $.getJSON('data/citylimit.topojson', function(data){
+        var geoJsonObject = topojson.feature(data, data.objects.collection);
         vm.map.data.addGeoJson(geoJsonObject);
       });
 
@@ -94,18 +103,20 @@ function MainCtrl (requestFactory, $q, $timeout) {
 
   };
 
-  vm.createCircles = function() {
-    var infoWindow;
-    for (var i = 0; i < vm.foodPlaces.length - 1; i++) {
-      var color = (function() {
-        for (var j = 0; j < vm.drinkPlaces.length - 1; j++) {
-          if (vm.drinkPlaces[j][0] === Number(vm.foodPlaces[i].location.latitude) && vm.drinkPlaces[j][1] === Number(vm.foodPlaces[i].location.longitude)) {
-            return '#0000FF';
-          }
-        }
-        return '#FF0000';
-      })();
+  // picks the color for a circle. blue if the place also has a liquor license, red if not
+  vm.chooseColor = function(i) {
+    for (var j = 0; j < vm.drinkPlaces.length - 1; j++) {
+      if (vm.drinkPlaces[j][0] === Number(vm.foodPlaces[i].location.latitude) && vm.drinkPlaces[j][1] === Number(vm.foodPlaces[i].location.longitude)) {
+        return '#0000FF';
+      }
+    }
+    return '#FF0000';
+  };
 
+  // creates circles from the database results, then pushes them into an array
+  vm.createCircles = function() {
+    for (var i = 0; i < vm.foodPlaces.length - 1; i++) {
+      var color = vm.chooseColor(i);
       var placeYear = Number(vm.foodPlaces[i].licenseadddttm.substring(0,4));
 
       var circle = new google.maps.Circle({
@@ -124,21 +135,24 @@ function MainCtrl (requestFactory, $q, $timeout) {
         radius: 10
       });
 
-      google.maps.event.addListener(circle, 'click', function(ev){
-        if (infoWindow) {
-          infoWindow.close();
-        }
-        infoWindow = new google.maps.InfoWindow({
-          content: '<div class="info"><h2>' + this.name + '</h2><h3>' + this.address + ', ' + this.city + '</h3><h4>Phone: ' + this.phone + '</h4></div>'
-        });
-        infoWindow.setPosition(ev.latLng);
-        infoWindow.open(vm.map);
-      });
-
+      google.maps.event.addListener(circle, 'click', vm.showInfoWindow);
       vm.circles.push(circle);
     }
   };
 
+  // function attached to circles on click events. first removes any open info windows, then opens a window in the correct place with the place's info
+  vm.showInfoWindow = function(ev) {
+    if (infoWindow) {
+      infoWindow.close();
+    }
+    infoWindow = new google.maps.InfoWindow({
+      content: '<div class="info"><h2>' + this.name + '</h2><h3>' + this.address + ', ' + this.city + '</h3><h4>Phone: ' + this.phone + '</h4></div>'
+    });
+    infoWindow.setPosition(ev.latLng);
+    infoWindow.open(vm.map);
+  };
+
+  // draws a heatmap based on the places from the correct years
   vm.setHeatmap = function() {
     var heatArray = [];
 
@@ -163,8 +177,9 @@ function MainCtrl (requestFactory, $q, $timeout) {
     vm.heatmap.setMap(vm.map);
     vm.heatmap.set('radius', 50);
     vm.heatmap.set('maxIntensity', 10);
-  }
+  };
 
+  // shows circles from places from the correct years
   vm.showCircles = function() {
     for (var i = 0; i < vm.circles.length; i++) {
       if (vm.circles[i].year <= Number(vm.year)) {
@@ -173,6 +188,8 @@ function MainCtrl (requestFactory, $q, $timeout) {
     }
   };
 
+
+  // when the app starts up, show the google map, make the data requests, then draw the appropriate circles
   vm.makeMap();
   vm.getData();
 }
