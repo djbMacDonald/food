@@ -32,8 +32,10 @@ module.exports = function(config) {
       'bower_components/angular-mocks/angular-mocks.js',
       // endbower
       'app/scripts/**/*.js',
+      'app/scripts/*.js',
       'test/mock/**/*.js',
-      'test/spec/**/*.js'
+      'test/spec/**/*.js',
+      'http://maps.googleapis.com/maps/api/js?sensor=false&language=en&libraries=visualization'
     ],
 
     // list of files / patterns to exclude

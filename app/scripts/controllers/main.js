@@ -22,7 +22,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
 
   // make requests to the food database and the drink database. once both responses come in, draw the appropriate circles
   vm.getData = function() {
-    $q.all([requestFactory.getFoodPlaces(), requestFactory.getDrinkPlaces()])
+    return $q.all([requestFactory.getFoodPlaces(), requestFactory.getDrinkPlaces()])
     .then(function() {
       vm.createCircles();
       vm.addPoints();
@@ -115,7 +115,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
 
   // creates circles from the database results, then pushes them into an array
   vm.createCircles = function() {
-    for (var i = 0; i < vm.foodPlaces.length - 1; i++) {
+    for (var i = 0; i < vm.foodPlaces.length; i++) {
       var color = vm.chooseColor(i);
       var placeYear = Number(vm.foodPlaces[i].licenseadddttm.substring(0,4));
       var location = { lat: Number(vm.foodPlaces[i].location.latitude), lng: Number(vm.foodPlaces[i].location.longitude) };
@@ -139,7 +139,6 @@ function MainCtrl (requestFactory, $q, $timeout) {
         radius: 10
       });
 
-      google.maps.event.addListener(circle, 'click', vm.showInfoWindow);
       vm.circles.push(circle);
     }
   };
@@ -160,14 +159,14 @@ function MainCtrl (requestFactory, $q, $timeout) {
 
   // function attached to circles on click events. first removes any open info windows, then opens a window in the correct place with the place's info
   vm.showInfoWindow = function(ev) {
-    if (infoWindow) {
-      infoWindow.close();
+    if (vm.infoWindow) {
+      vm.infoWindow.close();
     }
-    infoWindow = new google.maps.InfoWindow({
+    vm.infoWindow = new google.maps.InfoWindow({
       content: '<div class="info"><h2>' + this.name + '</h2><h3>' + this.address + ', ' + this.city + '</h3><h4>Phone: ' + this.phone + '</h4></div>'
     });
-    infoWindow.setPosition(ev.latLng);
-    infoWindow.open(vm.map);
+    vm.infoWindow.setPosition(ev.latLng);
+    vm.infoWindow.open(vm.map);
   };
 
   // draws a heatmap based on the places from the correct years
@@ -176,6 +175,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
 
     for (var i = 0; i < vm.circles.length; i++) {
       vm.circles[i].setMap(null);
+      google.maps.event.clearListeners(vm.circles[i], 'click');
     }
 
     if (vm.heatmap) {
@@ -202,6 +202,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
     for (var i = 0; i < vm.circles.length; i++) {
       if (vm.circles[i].year <= Number(vm.year)) {
         vm.circles[i].setMap(vm.map);
+        google.maps.event.addListener(vm.circles[i], 'click', vm.showInfoWindow);
       }
     }
   };
