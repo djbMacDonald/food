@@ -118,6 +118,10 @@ function MainCtrl (requestFactory, $q, $timeout) {
     for (var i = 0; i < vm.foodPlaces.length - 1; i++) {
       var color = vm.chooseColor(i);
       var placeYear = Number(vm.foodPlaces[i].licenseadddttm.substring(0,4));
+      var location = { lat: Number(vm.foodPlaces[i].location.latitude), lng: Number(vm.foodPlaces[i].location.longitude) };
+      if (location.lat === 0) {
+        location = vm.geoAddress(vm.foodPlaces[i].address + ' Boston MA');
+      }
 
       var circle = new google.maps.Circle({
         strokeColor: color,
@@ -131,7 +135,7 @@ function MainCtrl (requestFactory, $q, $timeout) {
         city: vm.foodPlaces[i].city,
         phone: vm.formatPhone(vm.foodPlaces[i].dayphn),
         year: placeYear,
-        center: { lat: Number(vm.foodPlaces[i].location.latitude), lng: Number(vm.foodPlaces[i].location.longitude) },
+        center: location,
         radius: 10
       });
 
@@ -139,6 +143,19 @@ function MainCtrl (requestFactory, $q, $timeout) {
       vm.circles.push(circle);
     }
   };
+
+  //if the database does not have the lat/long of an establishment, uses google geocoder to find the coordinates from the given address
+  vm.geoAddress = function(address) {
+    var geocoder = new google.maps.Geocoder();
+    geocoder.geocode( {address:address}, function(results, status) {
+    console.log(status);
+    if (status == google.maps.GeocoderStatus.OK) {
+      return {lat: results[0].geometry.location.k, lng: results[0].geometry.location.D};
+    } else {
+      return {lat: 0, lng: 0};
+    }
+  });
+};
 
   // function attached to circles on click events. first removes any open info windows, then opens a window in the correct place with the place's info
   vm.showInfoWindow = function(ev) {
