@@ -23,20 +23,28 @@ angular.module('foodApp').factory('requestFactory', ['$http', function ($http){
 
   // find the latitude from the location string
   var getLat = function(location) {
-    var reg = /\(.*,/;
-    location = reg.exec(location)[0];
-    location = location.slice(1);
-    location = location.slice(0, -1);
-    return Number(location);
+    // debugger
+    // var reg = /\(.*,/;
+    // location = reg.exec(location)[0];
+    // location = location.slice(1);
+    // location = location.slice(0, -1);
+    // console.log(location.latitude);
+    if (location) {
+      return Number(location.latitude);
+    }
+    // return Number(location.latitude);
   };
 
   // find the longitude from the location string
   var getLong = function(location) {
-    var reg = /\s.*\)/;
-    location = reg.exec(location)[0];
-    location = location.slice(1);
-    location = location.slice(0, -1);
-    return Number(location);
+    // var reg = /\s.*\)/;
+    // location = reg.exec(location)[0];
+    // location = location.slice(1);
+    // location = location.slice(0, -1);
+    if (location) {
+      return Number(location.longitude);
+    }
+    // return Number(location.longitude);
   };
 
   return {
